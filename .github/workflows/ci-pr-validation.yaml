@@ -24,7 +24,7 @@ on:
       - main
   push:
     branches:
-      - main
+      - '*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -75,6 +75,43 @@ jobs:
 
       - name: Stop Pulsar service
         run: ./pulsar-test-service-stop.sh
+
+
+  macos-build:
+    name: Build on MacOS
+#    needs: unit-tests
+    runs-on: macos:latest
+    timeout-minutes: 120
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+#      - name: Update Homebrew
+#        run: |
+#          brew update --preinstall
+#          cat "$(brew --repository)/Library/Taps/homebrew/homebrew-core/Formula/foo.rb" > .github/brew-formulae
+      - name: Configure Homebrew cache
+        uses: actions/cache@v2
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: brew-macos-build
+      - name: Install Homebrew dependencies
+        run: |
+          brew install      \
+                cmake       \
+                pkg-config  \
+                boost       \
+                openssl     \
+                protobuf    \
+                snappy      \  
+                zstd
+
+      - name: CMake
+        run: cmake . -DBUILD_PERF_TOOLS=ON -DBUILD_TESTS=OFF
+
+      - name: Build
+        run: make -j8
 
 
   cpp-build-centos7:
